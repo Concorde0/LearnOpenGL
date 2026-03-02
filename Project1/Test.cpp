@@ -5,31 +5,34 @@
 // 顶点着色器源码
 const char* vertexShaderSource = "#version 330 core\n"
 "layout (location = 0) in vec3 aPos;\n"
+"layout (location = 1) in vec3 aColor;"
+"out vec3 ourColor;"
 "void main()\n"
 "{\n"
-"   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
+"   gl_Position = vec4(aPos, 1.0);"
+"   ourColor = aColor;\n"
 "}\0";
 
 // 片段着色器源码
 const char* fragmentShaderSource = "#version 330 core\n"
 "out vec4 FragColor;\n"
+"in vec3 ourColor;"
 "void main()\n"
 "{\n"
-"   FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
+"   FragColor = vec4(ourColor, 1.0);\n"
 "}\0";
 
 // 三角形顶点数据
 float vertices[] = {
-     0.5f, 0.5f, 0.0f,   // 右上角
-    0.5f, -0.5f, 0.0f,  // 右下角
-    -0.5f, -0.5f, 0.0f, // 左下角
-    -0.5f, 0.5f, 0.0f   // 左上角
+    // 位置              // 颜色
+     0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,   // 右下
+    -0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,   // 左下
+     0.0f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f    // 顶部
 };
 
 // 索引数据（指定绘制顶点的顺序）
 unsigned int indices[] = {
-    0, 1, 3, // 第一个三角形
-    1, 2, 3  // 第二个三角形
+    0, 1, 2, // 第一个三角形
 };
 
 // 全局变量
@@ -89,11 +92,13 @@ int main() {
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); // 将顶点数据复制到 VBO
 
     // 设置顶点属性指针（位置属性）
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float))); // 颜色属性
     glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
 
     // -------------------- 着色器编译 & 链接 --------------------
-    // 顶点着色器
+    // 顶点着色器    
     vertexShader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
     glCompileShader(vertexShader);
@@ -125,7 +130,7 @@ int main() {
         // 使用着色器程序 & 绘制图形
         glUseProgram(shaderProgram);
         glBindVertexArray(VAO);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); // 使用 EBO 中的索引绘制
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); // 使用 EBO 中的索引绘制代替 DrawArrays
 
         // 交换缓冲 & 处理事件
         glfwSwapBuffers(window);
@@ -135,7 +140,7 @@ int main() {
     // -------------------- 释放资源 --------------------
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
-    glDeleteBuffers(1, &EBO); // 释放 EBO
+    glDeleteBuffers(1, &EBO);
 
     glfwTerminate();
     return 0;
